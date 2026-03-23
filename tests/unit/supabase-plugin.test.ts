@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import plugin from "~/plugins/supabase.client";
 
@@ -78,33 +78,44 @@ describe("supabase.client plugin", () => {
     consoleSpy.mockRestore();
   });
 
-  it("handles auth state change with session", () => {
+  it("updates user and session refs on SIGNED_IN auth state change", () => {
     const result = plugin() as any;
     const user = result.provide.supabaseUser;
     const session = result.provide.supabaseSession;
 
-    // The onAuthStateChange callback was stored
     const callback = (globalThis as any).__authCallback;
-    if (callback) {
-      const mockSession = {
-        user: { id: "user-1", email: "test@test.com" },
-        access_token: "tok",
-      };
-      callback("SIGNED_IN", mockSession);
-      // session and user should be updated via the ref
-    }
-    // At minimum, these should be refs
-    expect(user).toHaveProperty("value");
-    expect(session).toHaveProperty("value");
+    expect(callback).toBeDefined();
+
+    const mockSession = {
+      user: { id: "user-1", email: "test@test.com" },
+      access_token: "tok",
+    };
+    callback("SIGNED_IN", mockSession);
+
+    expect(session.value).toEqual(mockSession);
+    expect(user.value).toEqual(mockSession.user);
   });
 
-  it("handles auth state change with null session (sign out)", () => {
+  it("clears user and session refs on SIGNED_OUT auth state change", () => {
     const result = plugin() as any;
+    const user = result.provide.supabaseUser;
+    const session = result.provide.supabaseSession;
+
     const callback = (globalThis as any).__authCallback;
-    if (callback) {
-      callback("SIGNED_OUT", null);
-    }
-    expect(result.provide.supabaseUser).toHaveProperty("value");
+    expect(callback).toBeDefined();
+
+    // First sign in
+    const mockSession = {
+      user: { id: "user-1", email: "test@test.com" },
+      access_token: "tok",
+    };
+    callback("SIGNED_IN", mockSession);
+    expect(user.value).toEqual(mockSession.user);
+
+    // Then sign out
+    callback("SIGNED_OUT", null);
+    expect(session.value).toBeNull();
+    expect(user.value).toBeNull();
   });
 
   it("does not log error when both URL and Key are provided", () => {

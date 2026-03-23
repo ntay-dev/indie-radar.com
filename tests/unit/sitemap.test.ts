@@ -108,11 +108,21 @@ describe("sitemap.xml with no products", () => {
   it("handles null products data gracefully", async () => {
     const { createClient } = await import("@supabase/supabase-js");
     const mockCreateClient = createClient as any;
-    const origImpl = mockCreateClient.getMockImplementation?.();
 
-    // Even with the standard mock, the sitemap should be valid XML
+    mockCreateClient.mockReturnValueOnce({
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          order: vi.fn(() => Promise.resolve({ data: null })),
+        })),
+      })),
+    });
+
     const result = await sitemapHandler({});
     expect(result).toContain("</urlset>");
+    // Static pages should still be present
+    expect(result).toContain("<loc>https://indie-radar.com/</loc>");
+    // No product URLs should appear
+    expect(result).not.toContain("/products/notion");
   });
 });
 
@@ -126,9 +136,7 @@ describe("sitemap.xml with updated_at", () => {
         select: vi.fn(() => ({
           order: vi.fn(() =>
             Promise.resolve({
-              data: [
-                { slug: "notion", updated_at: "2025-06-15T10:00:00Z" },
-              ],
+              data: [{ slug: "notion", updated_at: "2025-06-15T10:00:00Z" }],
             }),
           ),
         })),
@@ -136,7 +144,9 @@ describe("sitemap.xml with updated_at", () => {
     });
 
     const result = await sitemapHandler({});
-    expect(result).toContain("<loc>https://indie-radar.com/products/notion</loc>");
+    expect(result).toContain(
+      "<loc>https://indie-radar.com/products/notion</loc>",
+    );
     expect(result).toContain("<lastmod>2025-06-15</lastmod>");
   });
 });

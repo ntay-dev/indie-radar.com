@@ -33,7 +33,7 @@ vi.mock("@duckdb/duckdb-wasm", () => ({
 }));
 
 // --- Mock browser globals needed by init() ---
-const origURL = globalThis.URL;
+const _origURL = globalThis.URL;
 const mockRevokeObjectURL = vi.fn();
 const mockCreateObjectURL = vi.fn(() => "blob:mock-url");
 
@@ -53,7 +53,9 @@ class MockURL {
     public options: any,
   ) {}
 };
-(globalThis as any).Worker = class MockWorker { constructor(public url: string) {} };
+(globalThis as any).Worker = class MockWorker {
+  constructor(public url: string) {}
+};
 
 // --- Mock fetch ---
 const mockFetch = vi.fn();
@@ -79,7 +81,9 @@ describe("useDuckDB", () => {
           public options: any,
         ) {}
       };
-      (globalThis as any).Worker = class MockWorker { constructor(public url: string) {} };
+      (globalThis as any).Worker = class MockWorker {
+        constructor(public url: string) {}
+      };
       (globalThis as any).fetch = mockFetch;
 
       // Reset mock return values
@@ -193,7 +197,9 @@ describe("useDuckDB", () => {
           public options: any,
         ) {}
       };
-      (globalThis as any).Worker = class MockWorker { constructor(public url: string) {} };
+      (globalThis as any).Worker = class MockWorker {
+        constructor(public url: string) {}
+      };
       (globalThis as any).fetch = mockFetch;
       mockQuery.mockResolvedValue({ toArray: () => [] });
       mockConnect.mockResolvedValue(mockConnection);
@@ -339,7 +345,9 @@ describe("useDuckDB", () => {
           public options: any,
         ) {}
       };
-      (globalThis as any).Worker = class MockWorker { constructor(public url: string) {} };
+      (globalThis as any).Worker = class MockWorker {
+        constructor(public url: string) {}
+      };
       (globalThis as any).fetch = mockFetch;
       mockQuery.mockResolvedValue({ toArray: () => [] });
       mockConnect.mockResolvedValue(mockConnection);
@@ -432,7 +440,13 @@ describe("useDuckDB", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          { i: "b1", sn: "src", ei: "ext-id", rd: { n: "CompactName" }, fa: "2024-01-01" },
+          {
+            i: "b1",
+            sn: "src",
+            ei: "ext-id",
+            rd: { n: "CompactName" },
+            fa: "2024-01-01",
+          },
         ],
       });
 
@@ -451,7 +465,13 @@ describe("useDuckDB", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          { i: "b1", sn: "src", ei: "ext", rd: { productName: "StarterName" }, fa: "2024-01-01" },
+          {
+            i: "b1",
+            sn: "src",
+            ei: "ext",
+            rd: { productName: "StarterName" },
+            fa: "2024-01-01",
+          },
         ],
       });
 
@@ -470,7 +490,13 @@ describe("useDuckDB", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          { i: "b1", sn: "src", ei: "ext", rd: { revenue: { mrr: 9999 } }, fa: "2024-01-01" },
+          {
+            i: "b1",
+            sn: "src",
+            ei: "ext",
+            rd: { revenue: { mrr: 9999 } },
+            fa: "2024-01-01",
+          },
         ],
       });
 
@@ -508,7 +534,13 @@ describe("useDuckDB", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          { i: "b1", sn: "src", ei: "ext", rd: { monthlyRevenue: 7777 }, fa: "2024-01-01" },
+          {
+            i: "b1",
+            sn: "src",
+            ei: "ext",
+            rd: { monthlyRevenue: 7777 },
+            fa: "2024-01-01",
+          },
         ],
       });
 
@@ -527,7 +559,13 @@ describe("useDuckDB", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          { i: "b1", sn: "src", ei: "ext", rd: { revenue: { mrr: 0 }, monthlyRevenue: 500 }, fa: "2024-01-01" },
+          {
+            i: "b1",
+            sn: "src",
+            ei: "ext",
+            rd: { revenue: { mrr: 0 }, monthlyRevenue: 500 },
+            fa: "2024-01-01",
+          },
         ],
       });
 
@@ -546,7 +584,13 @@ describe("useDuckDB", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          { i: "b1", sn: "src", ei: "ext", rd: { c: "Analytics" }, fa: "2024-01-01" },
+          {
+            i: "b1",
+            sn: "src",
+            ei: "ext",
+            rd: { c: "Analytics" },
+            fa: "2024-01-01",
+          },
         ],
       });
 
@@ -565,7 +609,13 @@ describe("useDuckDB", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          { i: "b1", sn: "src", ei: "ext", rd: { co: "Germany" }, fa: "2024-01-01" },
+          {
+            i: "b1",
+            sn: "src",
+            ei: "ext",
+            rd: { co: "Germany" },
+            fa: "2024-01-01",
+          },
         ],
       });
 
@@ -584,7 +634,13 @@ describe("useDuckDB", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          { i: "b1", sn: "src", ei: "fallback-name", rd: null, fa: "2024-01-01" },
+          {
+            i: "b1",
+            sn: "src",
+            ei: "fallback-name",
+            rd: null,
+            fa: "2024-01-01",
+          },
         ],
       });
 
@@ -605,7 +661,13 @@ describe("useDuckDB", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          { i: "b1", sn: "src", ei: "ext", rd: { website: "https://example.com" }, fa: "2024-01-01" },
+          {
+            i: "b1",
+            sn: "src",
+            ei: "ext",
+            rd: { website: "https://example.com" },
+            fa: "2024-01-01",
+          },
         ],
       });
 
@@ -624,7 +686,13 @@ describe("useDuckDB", () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => [
-          { i: "b1", sn: "src", ei: "ext", rd: { homepage: "https://home.com" }, fa: "2024-01-01" },
+          {
+            i: "b1",
+            sn: "src",
+            ei: "ext",
+            rd: { homepage: "https://home.com" },
+            fa: "2024-01-01",
+          },
         ],
       });
 
@@ -650,7 +718,9 @@ describe("useDuckDB", () => {
           public options: any,
         ) {}
       };
-      (globalThis as any).Worker = class MockWorker { constructor(public url: string) {} };
+      (globalThis as any).Worker = class MockWorker {
+        constructor(public url: string) {}
+      };
       (globalThis as any).fetch = mockFetch;
       mockQuery.mockResolvedValue({ toArray: () => [] });
       mockConnect.mockResolvedValue(mockConnection);
@@ -686,12 +756,23 @@ describe("useDuckDB", () => {
         .mockResolvedValueOnce({
           ok: true,
           json: async () => [
-            { i: "dp1", pi: "p1", fn: "mrr", fv: "5000", si: "s1", sa: "2024-01-01", da: "2024-01-01", ic: true },
+            {
+              i: "dp1",
+              pi: "p1",
+              fn: "mrr",
+              fv: "5000",
+              si: "s1",
+              sa: "2024-01-01",
+              da: "2024-01-01",
+              ic: true,
+            },
           ],
         });
 
       await duck.ensureDatapoints();
-      expect(mockFetch).toHaveBeenCalledWith("/data/datapoints-manifest.json?v=v2");
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/data/datapoints-manifest.json?v=v2",
+      );
       expect(mockFetch).toHaveBeenCalledWith("/data/datapoints.json?v=v2");
 
       const dpCall = mockRegisterFileText.mock.calls.find(

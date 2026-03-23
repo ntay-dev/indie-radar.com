@@ -1,9 +1,4 @@
-import {
-  createClient,
-  type SupabaseClient,
-  type User,
-  type Session,
-} from "@supabase/supabase-js";
+import { createClient, type User, type Session } from "@supabase/supabase-js";
 import type { Database } from "~/types/database.types";
 
 export default defineNuxtPlugin(() => {

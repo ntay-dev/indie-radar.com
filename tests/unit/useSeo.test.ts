@@ -1,5 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { computed } from "vue";
+import { describe, it, expect, beforeEach } from "vitest";
 
 // Track calls to useHead and useJsonLd
 let capturedHeadCalls: any[] = [];
@@ -103,9 +102,7 @@ describe("useSeo", () => {
       const json = capturedHeadCalls[0].script[0].innerHTML;
       expect(json).toContain("https://example.com/page");
       // Should NOT double-prefix
-      expect(json).not.toContain(
-        "https://indie-radar.comhttps://example.com",
-      );
+      expect(json).not.toContain("https://indie-radar.comhttps://example.com");
     });
   });
 

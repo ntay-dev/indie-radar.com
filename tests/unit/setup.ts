@@ -121,18 +121,17 @@ const mockDuckDB = {
 };
 
 // Mock localStorage for caching tests
-const localStorageStore: Record<string, string> = {};
+let localStorageStore: Record<string, string> = {};
 (globalThis as any).localStorage = {
   getItem: (key: string) => localStorageStore[key] ?? null,
   setItem: (key: string, value: string) => {
     localStorageStore[key] = value;
   },
   removeItem: (key: string) => {
-    delete localStorageStore[key];
+    const { [key]: _, ...rest } = localStorageStore;
+    localStorageStore = rest;
   },
   clear: () => {
-    for (const key of Object.keys(localStorageStore)) {
-      delete localStorageStore[key];
-    }
+    localStorageStore = {};
   },
 };

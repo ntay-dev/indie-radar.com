@@ -245,17 +245,50 @@ describe("products store", () => {
   });
 
   describe("filter: sourceProductIds", () => {
-    it("filters by sourceProductIds when set", () => {
+    it("filters products when sourceProductIds is set via resolveSourceFilter", async () => {
       store.allProducts.value = [
         { id: "1", name: "A", mrr: 100 },
         { id: "2", name: "B", mrr: 200 },
         { id: "3", name: "C", mrr: 300 },
       ] as any;
       store.setFilters({ hideAnonymous: false });
-      // Manually set sourceProductIds via internal state
-      // We access it through resolveSourceFilter behavior
-      // For now test that filteredProducts works with all products
+
+      // Without source filter, all products are visible
       expect(store.filteredProducts.value).toHaveLength(3);
+
+      // Simulate resolveSourceFilter setting sourceProductIds
+      const mockDuck = (globalThis as any).__mockDuckDB;
+      mockDuck.query.mockResolvedValueOnce([
+        { product_id: "1" },
+        { product_id: "3" },
+      ]);
+      store.setFilters({ hideAnonymous: false, sources: ["source-1"] });
+      await store.resolveSourceFilter();
+
+      // Now only products with matching IDs should be visible
+      expect(store.filteredProducts.value).toHaveLength(2);
+      const ids = store.filteredProducts.value.map((p: any) => p.id).sort();
+      expect(ids).toEqual(["1", "3"]);
+    });
+
+    it("shows all products when sourceProductIds is cleared", async () => {
+      store.allProducts.value = [
+        { id: "1", name: "A", mrr: 100 },
+        { id: "2", name: "B", mrr: 200 },
+      ] as any;
+      store.setFilters({ hideAnonymous: false });
+
+      // Set source filter
+      const mockDuck = (globalThis as any).__mockDuckDB;
+      mockDuck.query.mockResolvedValueOnce([{ product_id: "1" }]);
+      store.setFilters({ hideAnonymous: false, sources: ["source-1"] });
+      await store.resolveSourceFilter();
+      expect(store.filteredProducts.value).toHaveLength(1);
+
+      // Clear source filter
+      store.setFilters({ hideAnonymous: false, sources: [] });
+      await store.resolveSourceFilter();
+      expect(store.filteredProducts.value).toHaveLength(2);
     });
   });
 
@@ -264,9 +297,7 @@ describe("products store", () => {
       store.setFilters({ sources: [] });
       await store.resolveSourceFilter();
       // All products should be visible (no source filtering)
-      store.allProducts.value = [
-        { id: "1", name: "A", mrr: 100 },
-      ] as any;
+      store.allProducts.value = [{ id: "1", name: "A", mrr: 100 }] as any;
       store.setFilters({ hideAnonymous: false, sources: [] });
       expect(store.filteredProducts.value).toHaveLength(1);
     });
@@ -274,9 +305,7 @@ describe("products store", () => {
     it("sets sourceProductIds to null when sources is undefined", async () => {
       store.setFilters({ sources: undefined });
       await store.resolveSourceFilter();
-      store.allProducts.value = [
-        { id: "1", name: "A", mrr: 100 },
-      ] as any;
+      store.allProducts.value = [{ id: "1", name: "A", mrr: 100 }] as any;
       store.setFilters({ hideAnonymous: false });
       expect(store.filteredProducts.value).toHaveLength(1);
     });

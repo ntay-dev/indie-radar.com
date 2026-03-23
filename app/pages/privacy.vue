@@ -18,9 +18,7 @@
       </h1>
       <p class="mb-8 text-sm text-(--color-text-muted)">Stand: März 2026</p>
 
-      <div
-        class="space-y-8 leading-relaxed text-(--color-text-secondary)"
-      >
+      <div class="space-y-8 leading-relaxed text-(--color-text-secondary)">
         <section>
           <h2 class="mb-3 text-xl font-bold text-(--color-text-primary)">
             1. Verantwortlicher

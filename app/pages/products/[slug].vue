@@ -1,9 +1,7 @@
 <template>
   <div>
     <!-- Back nav -->
-    <div
-      class="border-b border-(--color-border) bg-(--color-surface)"
-    >
+    <div class="border-b border-(--color-border) bg-(--color-surface)">
       <div class="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
         <NuxtLink
           to="/"
@@ -83,9 +81,7 @@
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-3">
-                  <h1
-                    class="text-2xl font-bold text-(--color-text-primary)"
-                  >
+                  <h1 class="text-2xl font-bold text-(--color-text-primary)">
                     {{ product.name }}
                   </h1>
                   <DataAge :sourced-at="product.latest_sourced_at" />
@@ -213,9 +209,7 @@
         <div>
           <div class="card p-6">
             <div class="flex items-center justify-between">
-              <h2
-                class="text-sm font-semibold text-(--color-text-primary)"
-              >
+              <h2 class="text-sm font-semibold text-(--color-text-primary)">
                 Sources & Provenance
               </h2>
               <span
