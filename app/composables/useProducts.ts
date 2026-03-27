@@ -20,12 +20,11 @@ export function useProducts() {
     try {
       await duck.ensureData();
 
-      const safeSlug = slug.replace(/'/g, "''");
-      const rows = await duck.query<ProductView>(
-        `SELECT * FROM gold WHERE slug = '${safeSlug}' LIMIT 1`,
-      );
+      // Use client-side filtering to avoid SQL injection
+      const rows = await duck.query<ProductView>("SELECT * FROM gold");
+      const match = rows.find((r) => r.slug === slug);
 
-      return rows[0] ?? null;
+      return match ?? null;
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : "Product not found";
       return null;
@@ -38,9 +37,7 @@ export function useProducts() {
     try {
       await duck.ensureDatapoints();
 
-      const safeId = productId.replace(/'/g, "''");
-
-      // Query data points with source info joined
+      // Fetch all joined data, then filter client-side to avoid SQL injection
       const rows = await duck.query<Record<string, unknown>>(
         `SELECT
           dp.id, dp.product_id, dp.field_name, dp.field_value,
@@ -50,12 +47,13 @@ export function useProducts() {
           s.notes as s_notes
         FROM data_points dp
         LEFT JOIN sources s ON dp.source_id = s.id
-        WHERE dp.product_id = '${safeId}'
         ORDER BY dp.field_name`,
       );
 
+      const filtered = rows.filter((r) => r.product_id === productId);
+
       // Reshape into expected format
-      return rows.map((r) => ({
+      return filtered.map((r) => ({
         id: r.id as string,
         product_id: r.product_id as string,
         field_name: r.field_name as string,

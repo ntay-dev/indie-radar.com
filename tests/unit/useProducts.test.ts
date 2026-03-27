@@ -38,11 +38,9 @@ describe("useProducts", () => {
       expect(result).toEqual(product);
     });
 
-    it("queries by slug via DuckDB SQL", async () => {
+    it("queries gold table via DuckDB SQL", async () => {
       await composable.fetchProduct("notion");
       const sql = mockDuck.query.mock.calls[0][0] as string;
-      expect(sql).toContain("notion");
-      expect(sql).toContain("slug");
       expect(sql).toContain("gold");
     });
 
@@ -64,10 +62,14 @@ describe("useProducts", () => {
       expect(composable.loading.value).toBe(false);
     });
 
-    it("escapes single quotes in slug", async () => {
-      await composable.fetchProduct("test's-product");
+    it("filters client-side by slug (no SQL injection)", async () => {
+      const product = { slug: "test's-product", name: "Test" };
+      mockDuck.query.mockResolvedValueOnce([product]);
+      const result = await composable.fetchProduct("test's-product");
+      expect(result).toEqual(product);
+      // SQL should NOT contain the slug (client-side filtering)
       const sql = mockDuck.query.mock.calls[0][0] as string;
-      expect(sql).toContain("test''s-product");
+      expect(sql).not.toContain("test");
     });
   });
 
@@ -79,7 +81,8 @@ describe("useProducts", () => {
       const sql = mockDuck.query.mock.calls[0][0] as string;
       expect(sql).toContain("data_points");
       expect(sql).toContain("sources");
-      expect(sql).toContain("abc-123");
+      // Product ID is filtered client-side, not in SQL
+      expect(sql).not.toContain("abc-123");
     });
 
     it("returns empty array on error", async () => {

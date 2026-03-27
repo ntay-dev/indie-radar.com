@@ -140,18 +140,7 @@ export default defineNuxtConfig({
     },
     pageTransition: { name: "page", mode: "out-in" },
   },
-  modules: ["@pinia/nuxt", "shadcn-nuxt", "@nuxtjs/i18n", "@nuxt/eslint"],
-  shadcn: {
-    prefix: "",
-    componentDir: "./app/components/ui",
-  },
-  i18n: {
-    defaultLocale: "de",
-    locales: [
-      { code: "de", file: "de-DE.json" },
-      { code: "en", file: "en-US.json" },
-    ],
-  },
+  modules: ["@pinia/nuxt", "@nuxt/eslint"],
   vite: {
     plugins: [tailwindcss()],
   },
@@ -167,6 +156,6 @@ export default defineNuxtConfig({
     },
   },
   typescript: {
-    typeCheck: false,
+    typeCheck: true,
   },
 });

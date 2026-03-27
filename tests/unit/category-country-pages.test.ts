@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
 
-// Test URL generation logic for category and country pages
+// Test URL generation logic for category and country filter links
 function categoryUrl(slug: string): string {
-  return `/kategorie/${slug}`;
+  return `/products?category=${slug}`;
 }
 
 function countryUrl(code: string): string {
-  return `/land/${code.toLowerCase()}`;
+  return `/products?country=${code}`;
 }
 
 function countryCodeToFlag(code: string): string {
@@ -19,23 +19,23 @@ function countryCodeToFlag(code: string): string {
 
 describe("category pages", () => {
   it("generates correct URL from slug", () => {
-    expect(categoryUrl("crm")).toBe("/kategorie/crm");
+    expect(categoryUrl("crm")).toBe("/products?category=crm");
     expect(categoryUrl("project-management")).toBe(
-      "/kategorie/project-management",
+      "/products?category=project-management",
     );
-    expect(categoryUrl("analytics")).toBe("/kategorie/analytics");
+    expect(categoryUrl("analytics")).toBe("/products?category=analytics");
   });
 });
 
 describe("country pages", () => {
   it("generates correct URL from code", () => {
-    expect(countryUrl("US")).toBe("/land/us");
-    expect(countryUrl("DE")).toBe("/land/de");
-    expect(countryUrl("GB")).toBe("/land/gb");
+    expect(countryUrl("US")).toBe("/products?country=US");
+    expect(countryUrl("DE")).toBe("/products?country=DE");
+    expect(countryUrl("GB")).toBe("/products?country=GB");
   });
 
   it("handles lowercase input", () => {
-    expect(countryUrl("us")).toBe("/land/us");
+    expect(countryUrl("us")).toBe("/products?country=us");
   });
 });
 

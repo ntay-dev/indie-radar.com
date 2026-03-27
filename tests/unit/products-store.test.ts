@@ -259,8 +259,9 @@ describe("products store", () => {
       // Simulate resolveSourceFilter setting sourceProductIds
       const mockDuck = (globalThis as any).__mockDuckDB;
       mockDuck.query.mockResolvedValueOnce([
-        { product_id: "1" },
-        { product_id: "3" },
+        { product_id: "1", source_id: "source-1" },
+        { product_id: "2", source_id: "source-2" },
+        { product_id: "3", source_id: "source-1" },
       ]);
       store.setFilters({ hideAnonymous: false, sources: ["source-1"] });
       await store.resolveSourceFilter();
@@ -280,7 +281,10 @@ describe("products store", () => {
 
       // Set source filter
       const mockDuck = (globalThis as any).__mockDuckDB;
-      mockDuck.query.mockResolvedValueOnce([{ product_id: "1" }]);
+      mockDuck.query.mockResolvedValueOnce([
+        { product_id: "1", source_id: "source-1" },
+        { product_id: "2", source_id: "source-2" },
+      ]);
       store.setFilters({ hideAnonymous: false, sources: ["source-1"] });
       await store.resolveSourceFilter();
       expect(store.filteredProducts.value).toHaveLength(1);

@@ -38,7 +38,7 @@ const headers = {
 // Fetch with retry + exponential backoff
 // ============================================================
 
-async function fetchWithRetry(url, options, maxRetries = 3) {
+async function fetchWithRetry(url, options, maxRetries = 5) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     const res = await fetch(url, options);
 
@@ -48,7 +48,7 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
 
     if (res.status === 429 && attempt < maxRetries) {
       const retryAfter = parseInt(res.headers.get("retry-after") || "0", 10);
-      const wait = retryAfter > 0 ? retryAfter * 1000 : attempt * 10000;
+      const wait = retryAfter > 0 ? retryAfter * 1000 : attempt * 15000;
       console.log(
         `  429 Too Many Requests — waiting ${wait / 1000}s (attempt ${attempt}/${maxRetries})...`,
       );
@@ -80,8 +80,8 @@ async function fetchAllStartups() {
     hasMore = json.meta.hasMore;
     page++;
 
-    // Rate limiting: wait 1s between requests (was 500ms, increased to avoid 429)
-    await new Promise((r) => setTimeout(r, 1000));
+    // Rate limiting: wait 2s between requests to avoid 429s on longer pagination runs
+    await new Promise((r) => setTimeout(r, 2000));
   }
 
   console.log(`Fetched ${allStartups.length} startups total`);

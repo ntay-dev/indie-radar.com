@@ -160,7 +160,7 @@
               <p class="text-xs text-(--color-text-muted)">Country</p>
               <NuxtLink
                 v-if="product.country_code"
-                :to="`/land/${product.country_code.toLowerCase()}`"
+                :to="`/products?country=${product.country_code}`"
                 class="mt-1 text-sm font-medium text-(--color-text-primary) hover:text-blue-400"
               >
                 {{ product.country_name || "—" }}
@@ -176,7 +176,7 @@
               <p class="text-xs text-(--color-text-muted)">Category</p>
               <NuxtLink
                 v-if="product.category_slug"
-                :to="`/kategorie/${product.category_slug}`"
+                :to="`/products?category=${product.category_slug}`"
                 class="mt-1 text-sm font-medium text-(--color-text-primary) hover:text-blue-400"
               >
                 {{ product.category || "—" }}

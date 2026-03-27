@@ -14,6 +14,43 @@ import { createHash } from "crypto";
 const PROJECT_ID = process.env.SUPABASE_PROJECT_ID || "wenerrewidsepasvnlft";
 const ACCESS_TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
 
+// ============================================================
+// Input validation & safe SQL escaping
+// ============================================================
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const SOURCE_NAME_RE = /^[a-zA-Z0-9_-]+$/;
+
+function assertUUID(value, label) {
+  if (!UUID_RE.test(value)) {
+    throw new Error(`Invalid UUID for ${label}: ${value}`);
+  }
+}
+
+function assertSourceName(value) {
+  if (!SOURCE_NAME_RE.test(value)) {
+    throw new Error(
+      `Invalid source name (only alphanumeric, underscore, hyphen): ${value}`,
+    );
+  }
+}
+
+function assertInteger(value, label) {
+  if (!Number.isInteger(value)) {
+    throw new Error(`Expected integer for ${label}: ${value}`);
+  }
+}
+
+/**
+ * Escape a string for safe inclusion in a PostgreSQL single-quoted literal.
+ * Handles single quotes AND backslashes (standard_conforming_strings = on).
+ */
+function escapeSqlString(str) {
+  if (str === null || str === undefined) return "NULL";
+  return String(str).replace(/'/g, "''");
+}
+
 if (!ACCESS_TOKEN) {
   console.error("Error: SUPABASE_ACCESS_TOKEN environment variable required");
   process.exit(1);
@@ -66,9 +103,10 @@ export async function executeSql(sql, retries = 3) {
  * @returns {{ runId: string }}
  */
 export async function startRun(sourceName) {
+  assertSourceName(sourceName);
   const result = await executeSql(`
     INSERT INTO public.pipeline_runs (source_name, status)
-    VALUES ('${sourceName}', 'running')
+    VALUES ('${escapeSqlString(sourceName)}', 'running')
     RETURNING id;
   `);
   const runId = result[0].id;
@@ -80,7 +118,11 @@ export async function startRun(sourceName) {
  * Mark a pipeline run as completed.
  */
 export async function completeRun(runId, stats = {}) {
+  assertUUID(runId, "runId");
   const { fetched = 0, loaded = 0, errors = 0, metadata = {} } = stats;
+  assertInteger(fetched, "fetched");
+  assertInteger(loaded, "loaded");
+  assertInteger(errors, "errors");
   await executeSql(`
     UPDATE public.pipeline_runs
     SET status = 'completed',
@@ -88,8 +130,8 @@ export async function completeRun(runId, stats = {}) {
         records_fetched = ${fetched},
         records_loaded = ${loaded},
         records_errors = ${errors},
-        metadata = '${JSON.stringify(metadata).replace(/'/g, "''")}'::jsonb
-    WHERE id = '${runId}';
+        metadata = '${escapeSqlString(JSON.stringify(metadata))}'::jsonb
+    WHERE id = '${escapeSqlString(runId)}';
   `);
   console.log(
     `Pipeline run completed: ${runId} (fetched=${fetched}, loaded=${loaded}, errors=${errors})`,
@@ -100,12 +142,14 @@ export async function completeRun(runId, stats = {}) {
  * Mark a pipeline run as failed.
  */
 export async function failRun(runId, errorMessage) {
+  assertUUID(runId, "runId");
+  const safeMsg = escapeSqlString(String(errorMessage).substring(0, 2000));
   await executeSql(`
     UPDATE public.pipeline_runs
     SET status = 'failed',
         completed_at = now(),
-        error_message = '${errorMessage.replace(/'/g, "''").substring(0, 2000)}'
-    WHERE id = '${runId}';
+        error_message = '${safeMsg}'
+    WHERE id = '${escapeSqlString(runId)}';
   `);
   console.error(`Pipeline run failed: ${runId} — ${errorMessage}`);
 }
@@ -118,10 +162,6 @@ function computeChecksum(data) {
   return createHash("sha256").update(JSON.stringify(data)).digest("hex");
 }
 
-function escapeJsonForSql(obj) {
-  return JSON.stringify(obj).replace(/'/g, "''");
-}
-
 /**
  * Load raw records into bronze_raw_records.
  * @param {string} runId - pipeline run ID
@@ -130,18 +170,26 @@ function escapeJsonForSql(obj) {
  * @returns {{ loaded: number, errors: number }}
  */
 export async function loadBronzeRecords(runId, sourceName, records) {
+  assertUUID(runId, "runId");
+  assertSourceName(sourceName);
+
   let loaded = 0;
   let errors = 0;
   const batchSize = 50;
 
+  const safeRunId = escapeSqlString(runId);
+  const safeSrcName = escapeSqlString(sourceName);
+
+  function buildRecordValues(r) {
+    const checksum = computeChecksum(r.rawData);
+    const jsonStr = escapeSqlString(JSON.stringify(r.rawData));
+    const extId = escapeSqlString(r.externalId);
+    return `('${safeRunId}', '${safeSrcName}', '${extId}', '${jsonStr}'::jsonb, '${checksum}')`;
+  }
+
   for (let i = 0; i < records.length; i += batchSize) {
     const batch = records.slice(i, i + batchSize);
-    const values = batch.map((r) => {
-      const checksum = computeChecksum(r.rawData);
-      const jsonStr = escapeJsonForSql(r.rawData);
-      const extId = r.externalId.replace(/'/g, "''");
-      return `('${runId}', '${sourceName}', '${extId}', '${jsonStr}'::jsonb, '${checksum}')`;
-    });
+    const values = batch.map(buildRecordValues);
 
     const sql = `
       INSERT INTO public.bronze_raw_records
@@ -161,13 +209,10 @@ export async function loadBronzeRecords(runId, sourceName, records) {
       // Retry individual records
       for (const r of batch) {
         try {
-          const checksum = computeChecksum(r.rawData);
-          const jsonStr = escapeJsonForSql(r.rawData);
-          const extId = r.externalId.replace(/'/g, "''");
           await executeSql(`
             INSERT INTO public.bronze_raw_records
               (pipeline_run_id, source_name, external_id, raw_data, checksum)
-            VALUES ('${runId}', '${sourceName}', '${extId}', '${jsonStr}'::jsonb, '${checksum}')
+            VALUES ${buildRecordValues(r)}
             ON CONFLICT (pipeline_run_id, source_name, external_id)
             DO UPDATE SET raw_data = EXCLUDED.raw_data, checksum = EXCLUDED.checksum;
           `);
@@ -204,9 +249,10 @@ export async function loadBronzeRecords(runId, sourceName, records) {
  * @returns {{ inserts: number, updates: number, skips: number, errors: number }}
  */
 export async function transformRun(runId) {
+  assertUUID(runId, "runId");
   console.log(`Transforming Bronze -> Silver for run ${runId}...`);
   const result = await executeSql(
-    `SELECT * FROM public.transform_bronze_to_silver('${runId}');`,
+    `SELECT * FROM public.transform_bronze_to_silver('${escapeSqlString(runId)}');`,
   );
   const stats = result[0] || { inserts: 0, updates: 0, skips: 0, errors: 0 };
   console.log(

@@ -197,15 +197,15 @@ export const useProductsStore = defineStore("products", () => {
     const duck = useDuckDB();
     await duck.ensureDatapoints();
 
-    const sourceIds = filters.value.sources
-      .map((s) => `'${s.replace(/'/g, "''")}'`)
-      .join(",");
-
-    const rows = await duck.query<{ product_id: string }>(
-      `SELECT DISTINCT product_id FROM data_points WHERE source_id IN (${sourceIds})`,
+    // Fetch all data points, filter client-side to avoid SQL injection
+    const rows = await duck.query<{ product_id: string; source_id: string }>(
+      "SELECT DISTINCT product_id, source_id FROM data_points",
     );
 
-    sourceProductIds.value = new Set(rows.map((r) => r.product_id));
+    const sourceSet = new Set(filters.value.sources);
+    const matched = rows.filter((r) => sourceSet.has(r.source_id));
+
+    sourceProductIds.value = new Set(matched.map((r) => r.product_id));
   }
 
   /**
